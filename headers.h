@@ -13,6 +13,7 @@
 #include <csignal> //signal
 #include<fcntl.h> //history file
 #include<sstream> //history file
+#include <termios.h> //up arrow key
 using namespace std;
 
 //history
@@ -34,3 +35,5 @@ bool searchDir(string dirPath, string searchTarget); //search
 extern pid_t foreground;
 void signalCtrlC(int sigNum);
 void signalCtrlZ(int sigNum);
+//pinfo
+void handlePinfo(const vector<string>& args);
