@@ -16,14 +16,19 @@ void getCommands(char* input, vector<string>&commands){
 }
 
 //tokenize single input command
-void Tokenize(char* input, vector<string>&v){
+void Tokenize(char* input, char* argv[]){
+    for(int i=0; i<256; i++){
+        argv[i] = NULL;
+    }
 	char *str_Tokenized;
 	str_Tokenized = strtok(input, " \t");
+    int idx = 0;
 	while(str_Tokenized != NULL)
 	{
-		v.push_back(str_Tokenized);
+		argv[idx++] = str_Tokenized;
 		str_Tokenized = strtok(NULL, " ");
 	}
+    argv[idx] = NULL;
 }
 
 bool isInt(string str){
@@ -38,50 +43,45 @@ bool isInt(string str){
     return true;
 }
 
-void parse_redir(vector<string> &argv, vector<string> &redir_argv){
+void parse_redir(char* argv[], int n, vector<string> &redir_argv){
     //cout<<"parse redir"<<endl;
     int idx = 0;
-    int n = argv.size();
+    //int n = argv.size();
     //cout<<n<<endl;
-    while(idx < n){
-        //cout<<idx<<" "<<argv[idx]<<endl;
+    while(argv[idx] != NULL){
+        cout<<idx<<" "<<argv[idx]<<endl;
         // Check if command contains character <, >
-        if(strcmp(argv[idx].c_str(), "<") == 0 || strcmp(argv[idx].c_str(), ">") == 0){
+        if(strcmp(argv[idx], "<") == 0 || strcmp(argv[idx], ">") == 0){
             // Check for succeeded file name
             //cout<<"inside parse redir, found "<<argv[idx]<<" at index "<<idx<<endl;
             if(idx+1<n){
                 // Move redirect type and file name to redirect arguments vector
-                redir_argv[0] = strdup(argv[idx].c_str());
-                redir_argv[1] = strdup(argv[idx + 1].c_str());
-                if(redir_argv[0]=="<"){
-                    argv[idx] = redir_argv[0];
-                    argv[idx + 1] = redir_argv[1];
-                }
-                else{
-                    argv[idx] = '\0';
-                    argv[idx + 1] = '\0';
-                }
+                redir_argv[0] = strdup(argv[idx]);
+                redir_argv[1] = strdup(argv[idx + 1]);
+                argv[idx] = NULL;
+                argv[idx + 1] = NULL;
+                cout<<"redir:"<<redir_argv[0]<<redir_argv[1]<<endl;
                     
             }
-            else{
-                string cmd = argv[idx];
-                int ind1 = cmd.find(">");
-                int ind2 = cmd.find("<");
-                if(ind1 != -1){
-                    string file = cmd.substr(ind1);
-                    string sym = to_string(cmd[ind1]);
-                    redir_argv[0] = strdup(sym.c_str());
-                    redir_argv[1] = strdup(file.c_str());
-                    argv[idx] = '\0';
-                }
-                else if(ind2 != -1){
-                    string file = cmd.substr(ind2);
-                    string sym = to_string(cmd[ind2]);
-                    redir_argv[0] = strdup(sym.c_str());
-                    redir_argv[1] = strdup(file.c_str());
-                    argv[idx] = '\0';
-                }
-            }
+            // else{
+            //     string cmd = argv[idx];
+            //     int ind1 = cmd.find(">");
+            //     int ind2 = cmd.find("<");
+            //     if(ind1 != -1){
+            //         string file = cmd.substr(ind1);
+            //         string sym = to_string(cmd[ind1]);
+            //         redir_argv[0] = strdup(sym.c_str());
+            //         redir_argv[1] = strdup(file.c_str());
+            //         argv[idx] = '\0';
+            //     }
+            //     else if(ind2 != -1){
+            //         string file = cmd.substr(ind2);
+            //         string sym = to_string(cmd[ind2]);
+            //         redir_argv[0] = strdup(sym.c_str());
+            //         redir_argv[1] = strdup(file.c_str());
+            //         argv[idx] = '\0';
+            //     }
+            // }
         }
         idx++;
     }
@@ -91,6 +91,7 @@ void parse_redir(vector<string> &argv, vector<string> &redir_argv){
 void execCmd(vector<string> &v, bool background, bool oredir, bool aredir, bool iredir, vector<string> &redir_argv){
     pid_t pid = fork();
     if(pid == 0){
+        cout<<"child"<<endl;
         //child process
         int fd_out, fd_in;
         if(oredir || aredir){
@@ -125,7 +126,10 @@ void execCmd(vector<string> &v, bool background, bool oredir, bool aredir, bool 
                 exit(EXIT_FAILURE);
             }
 
-            dup2(fd_in, STDIN_FILENO);
+            if (dup2(fd_in, STDIN_FILENO) == -1) {
+                perror("Duplication of input file descriptor failed");
+                exit(EXIT_FAILURE);
+            }
 
             if(close(fd_in) == -1){
                 perror("Closing input failed");
@@ -137,6 +141,7 @@ void execCmd(vector<string> &v, bool background, bool oredir, bool aredir, bool 
         char **inputs = new char *[s+1];
         for (int i = 0; i < s; i++){
             inputs[i] = const_cast<char *>(v[i].c_str());
+            //cout<<inputs[i]<<endl;
         }
         inputs[s] = nullptr;
         int result = execvp(inputs[0], inputs);
@@ -147,6 +152,7 @@ void execCmd(vector<string> &v, bool background, bool oredir, bool aredir, bool 
     } 
     else if(pid > 0){ 
         // Parent process
+        cout<<"parent"<<endl;
         if(background){
             cout<<pid<<endl; //print pid
         }
@@ -161,11 +167,78 @@ void execCmd(vector<string> &v, bool background, bool oredir, bool aredir, bool 
         // Fork error
         cerr<<"Fork failed."<<endl;
     }
+
+}
+
+void child(char* argv[], bool background, bool oredir, bool aredir, bool iredir, vector<string> &redir_argv) {
+    int fd_out, fd_in;
+    if(oredir || aredir){
+        //cout<<"inside oredir"<<endl;
+        // Redirect output
+        // Get file description
+        cout<<redir_argv[1]<<endl;
+        fd_out = creat(redir_argv[1].c_str(), S_IRWXU);
+        if(fd_out == -1){
+            perror("Redirect output failed");
+            exit(EXIT_FAILURE);
+        }
+
+        // Replace stdout with output file
+        dup2(fd_out, STDOUT_FILENO);
+
+        // Check for error on close
+        if (close(fd_out) == -1){
+            perror("Closing output failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+        
+    else if(iredir){
+        //cout<<"inside iredir"<<endl;
+        // Redirect input
+        cout<<redir_argv[1]<<endl;
+        fd_in = open(redir_argv[1].c_str(), O_RDONLY);
+        if(fd_in == -1){
+            perror("Redirect input failed");
+            exit(EXIT_FAILURE);
+        }
+
+        if (dup2(fd_in, STDIN_FILENO) == -1) {
+            perror("Duplication of input file descriptor failed");
+            exit(EXIT_FAILURE);
+        }
+
+        if(close(fd_in) == -1){
+            perror("Closing input failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+    if (execvp(argv[0], argv) == -1) {
+      perror("Fail to execute command");
+      exit(EXIT_FAILURE);
+    }
+}
+
+void parent(pid_t child_pid, bool isbackground) {
+   int status;
+   printf("Parent <%d> spawned a child <%d>.\n", getpid(), child_pid);
+
+      if(!isbackground){
+         waitpid(child_pid, &status, 0);
+      }
+
+      else{
+         waitpid(child_pid, &status, WUNTRACED);
+         if (WIFEXITED(status)) {   
+            printf("Child <%d> exited with status = %d.\n", child_pid, status);
+         }
+      }
 }
 
 //handle pinfo
-void executePinfo(const vector<string>& args){
-    handlePinfo(args);
+void executePinfo(char * args[], int n){
+    handlePinfo(args, n);
 }
 
 //handle redirection
@@ -302,7 +375,8 @@ int main(){
         getCommands(&input[0], commands);
         int commands_size = commands.size();
         for(int i=0; i<commands_size; i++){
-            vector<string> ip;
+            //vector<string> ip;
+            char *argv[256];
             bool isBackground = false;
 
             // Trim leading spaces
@@ -340,30 +414,46 @@ int main(){
             }
 
             //Tokenize each command for tabs and spaces
-            Tokenize(&commands[i][0], ip);
-            int ip_size = ip.size();
-            if(ip_size == 0) break;
+            Tokenize(&commands[i][0], argv);
+            if(argv[0] == NULL) break;
+            // int ip_size = ip.size();
+            // if(ip_size == 0) break;
 
             // for(int i=0; i<ip.size(); i++){
             //     cout<<ip[i]<<endl;
             // }
     
             //exit
-            if(strcmp(ip[0].c_str(), "exit") == 0){
+            if(strcmp(argv[0], "exit") == 0){
                 saveHistory();
                 return 0;
             }
 
             //background check
-            string ip_last = ip[ip_size-1];
-            if(strcmp(ip_last.c_str(),"&") == 0){
-                isBackground = true;
-                ip.pop_back();
-                ip_size--;
+            int index = 0;
+            while (argv[index] != NULL){
+                index++;
             }
+            int ip_size = index;
+            if(index > 0){
+                char* lastArg = argv[index-1];
+                int len = strlen(lastArg);
+                if(len>0){
+                    if(lastArg[len-1]=='&'){
+                        lastArg[len-1] = '\0';
+                        isBackground = true;
+                    }
+                }
+            }
+            // string ip_last = ip[ip_size-1];
+            // if(strcmp(ip_last.c_str(),"&") == 0){
+            //     isBackground = true;
+            //     ip.pop_back();
+            //     ip_size--;
+            // }
 
             //pwd
-            if(strcmp(ip[0].c_str(), "pwd") == 0 && !oRedir && !iRedir && !aRedir){
+            if(strcmp(argv[0], "pwd") == 0 && !oRedir && !iRedir && !aRedir){
                 char *curr_dir;
                 curr_dir = get_wd(path, buf_size);
                 if(curr_dir)
@@ -372,7 +462,7 @@ int main(){
             }
 
             //cd
-            if(strcmp(ip[0].c_str(), "cd") == 0 && !oRedir && !iRedir && !aRedir){
+            if(strcmp(argv[0], "cd") == 0 && !oRedir && !iRedir && !aRedir){
                 if(ip_size == 1){
                     string old = prev_dir;
                     prev_dir = curr_dir;
@@ -386,18 +476,18 @@ int main(){
                     break;
                 }
                 string cpath = get_wd(path,buf_size);
-                if(strcmp(ip[1].c_str(), "..") == 0 && strcmp(cpath.c_str(),home_dir) == 0){
+                if(strcmp(argv[1], "..") == 0 && strcmp(cpath.c_str(),home_dir) == 0){
                     prev_dir = curr_dir;
                     cout<<cpath;
                 }
-                else if((strcmp(ip[1].c_str(),"~")==0) || (strcmp(ip[1].c_str(), "~/")==0)){
+                else if((strcmp(argv[1],"~")==0) || (strcmp(argv[1], "~/")==0)){
                     string old = prev_dir;
                     prev_dir = curr_dir;
                     if(!ch_dir(home_dir)){
                         prev_dir = old;
                     }
                 }
-                else if((strcmp(ip[1].c_str(),"-")==0)){
+                else if((strcmp(argv[1],"-")==0)){
                     if(prev_dir.size()==0){
                         cerr<<"cd: OLDPWD not set"<<endl;
                     }
@@ -413,7 +503,7 @@ int main(){
                 else{
                     string old = prev_dir;
                     prev_dir = curr_dir;
-                    if(!ch_dir(ip[1].c_str())){
+                    if(!ch_dir(argv[1])){
                         prev_dir = old;
                     }
                 }
@@ -422,30 +512,30 @@ int main(){
             }
 
             //ls
-            if(strcmp(ip[0].c_str(), "ls") == 0 && !oRedir && !iRedir && !aRedir) {
+            if(strcmp(argv[0], "ls") == 0 && !oRedir && !iRedir && !aRedir) {
                 bool showHidden = false;
                 bool longList = false;
                 vector<string> dirPath;
                 for (int i = 1; i < ip_size; i++) {
-                    if (ip[i] == "-a") {
+                    if (strcmp(argv[i],"-a")==0) {
                         showHidden = true;
                     } 
-                    else if (ip[i] == "-l") {
+                    else if (strcmp(argv[i],"-l")==0) {
                         longList = true;
                     }
-                    else if (ip[i] == "-la") {
-                        longList = true;
-                        showHidden = true;
-                    }
-                    else if (ip[i] == "-al") {
+                    else if (strcmp(argv[i],"-la")==0) {
                         longList = true;
                         showHidden = true;
                     }
-                    else if(ip[i] == "~"){
+                    else if (strcmp(argv[i],"-al")==0) {
+                        longList = true;
+                        showHidden = true;
+                    }
+                    else if(strcmp(argv[i],"~")==0){
                         dirPath.push_back(home);
                     }
                     else {
-                        dirPath.push_back(ip[i]);
+                        dirPath.push_back(argv[i]);
                     }
                 }
                 if(dirPath.size()==0){
@@ -456,29 +546,29 @@ int main(){
             }
             
             // pinfo command
-            if (ip[0] == "pinfo" && !oRedir && !iRedir && !aRedir) {
-                executePinfo(ip);
+            if (argv[0] == "pinfo" && !oRedir && !iRedir && !aRedir) {
+                executePinfo(argv, ip_size);
                 continue;
             }
 
             //search
-            if(strcmp(ip[0].c_str(),"search") == 0 && !oRedir && !iRedir && !aRedir){
-                if(ip.size() != 2){
+            if(strcmp(argv[0],"search") == 0 && !oRedir && !iRedir && !aRedir){
+                if(ip_size != 2){
                     cout<<"Invalid Arguments"<<endl;
                     break;
                 }
-                cout<<boolalpha<<searchDir(".",ip[1])<<endl;
+                cout<<boolalpha<<searchDir(".",argv[1])<<endl;
                 continue;
             }
 
             //history
-            if(strcmp(ip[0].c_str(),"history") == 0 && !oRedir && !iRedir && !aRedir){
-                if(ip.size()==1){
+            if(strcmp(argv[0],"history") == 0 && !oRedir && !iRedir && !aRedir){
+                if(ip_size == 1){
                     displayHistory();
                     continue;
                 }
                 else{
-                    string n = ip[1];
+                    string n = argv[1];
                     if(isInt(n)){
                         getHistory(stoi(n));
                         break;
@@ -490,11 +580,24 @@ int main(){
                 }
             }
             else{
-                vector<string> redir_argv(2);
+                vector<string> redir_argv(2,"");
                 if(oRedir || iRedir || aRedir){
-                    parse_redir(ip, redir_argv);
+                    parse_redir(argv, ip_size, redir_argv);
                 }
-                execCmd(ip, isBackground, oRedir, aRedir, iRedir, redir_argv);
+                //execCmd(ip, isBackground, oRedir, aRedir, iRedir, redir_argv);
+                pid_t pid = fork();
+                switch (pid) {
+                    case -1:
+                        perror("fork() failed!");
+                        exit(EXIT_FAILURE);
+                
+                    case 0:     // In child process
+                        child(argv, isBackground, oRedir, aRedir, iRedir, redir_argv);
+                        exit(EXIT_SUCCESS);
+                
+                    default:    // In parent process
+                        parent(pid, wait);
+                }
             }
         }
     }
