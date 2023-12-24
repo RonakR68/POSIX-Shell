@@ -14,6 +14,7 @@
 #include<fcntl.h> //history file
 #include<sstream> //history file
 #include <termios.h> //up arrow key
+#include <cstring>
 using namespace std;
 
 //history
@@ -36,4 +37,4 @@ extern pid_t foreground;
 void signalCtrlC(int sigNum);
 void signalCtrlZ(int sigNum);
 //pinfo
-void handlePinfo(const vector<string>& args);
+void handlePinfo(char* args[], int n);

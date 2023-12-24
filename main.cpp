@@ -44,139 +44,29 @@ bool isInt(string str){
 }
 
 void parse_redir(char* argv[], int n, vector<string> &redir_argv){
-    //cout<<"parse redir"<<endl;
     int idx = 0;
-    //int n = argv.size();
-    //cout<<n<<endl;
     while(argv[idx] != NULL){
-        cout<<idx<<" "<<argv[idx]<<endl;
         // Check if command contains character <, >
         if(strcmp(argv[idx], "<") == 0 || strcmp(argv[idx], ">") == 0){
             // Check for succeeded file name
-            //cout<<"inside parse redir, found "<<argv[idx]<<" at index "<<idx<<endl;
             if(idx+1<n){
                 // Move redirect type and file name to redirect arguments vector
                 redir_argv[0] = strdup(argv[idx]);
                 redir_argv[1] = strdup(argv[idx + 1]);
                 argv[idx] = NULL;
                 argv[idx + 1] = NULL;
-                cout<<"redir:"<<redir_argv[0]<<redir_argv[1]<<endl;
                     
             }
-            // else{
-            //     string cmd = argv[idx];
-            //     int ind1 = cmd.find(">");
-            //     int ind2 = cmd.find("<");
-            //     if(ind1 != -1){
-            //         string file = cmd.substr(ind1);
-            //         string sym = to_string(cmd[ind1]);
-            //         redir_argv[0] = strdup(sym.c_str());
-            //         redir_argv[1] = strdup(file.c_str());
-            //         argv[idx] = '\0';
-            //     }
-            //     else if(ind2 != -1){
-            //         string file = cmd.substr(ind2);
-            //         string sym = to_string(cmd[ind2]);
-            //         redir_argv[0] = strdup(sym.c_str());
-            //         redir_argv[1] = strdup(file.c_str());
-            //         argv[idx] = '\0';
-            //     }
-            // }
         }
         idx++;
     }
 }
 
-//execute other commands
-void execCmd(vector<string> &v, bool background, bool oredir, bool aredir, bool iredir, vector<string> &redir_argv){
-    pid_t pid = fork();
-    if(pid == 0){
-        cout<<"child"<<endl;
-        //child process
-        int fd_out, fd_in;
-        if(oredir || aredir){
-            //cout<<"inside oredir"<<endl;
-            // Redirect output
-            // Get file description
-            //cout<<redir_argv[1]<<endl;
-            fd_out = creat(redir_argv[1].c_str(), S_IRWXU);
-            if(fd_out == -1){
-                perror("Redirect output failed");
-                exit(EXIT_FAILURE);
-            }
-
-            // Replace stdout with output file
-            dup2(fd_out, STDOUT_FILENO);
-
-            // Check for error on close
-            if (close(fd_out) == -1){
-                perror("Closing output failed");
-                exit(EXIT_FAILURE);
-            }
-        }
-
-            
-        if(iredir){
-            //cout<<"inside iredir"<<endl;
-            // Redirect input
-            //cout<<redir_argv[1]<<endl;
-            fd_in = open(redir_argv[1].c_str(), O_RDONLY);
-            if(fd_in == -1){
-                perror("Redirect input failed");
-                exit(EXIT_FAILURE);
-            }
-
-            if (dup2(fd_in, STDIN_FILENO) == -1) {
-                perror("Duplication of input file descriptor failed");
-                exit(EXIT_FAILURE);
-            }
-
-            if(close(fd_in) == -1){
-                perror("Closing input failed");
-                exit(EXIT_FAILURE);
-            }
-        }
-
-        int s = v.size();
-        char **inputs = new char *[s+1];
-        for (int i = 0; i < s; i++){
-            inputs[i] = const_cast<char *>(v[i].c_str());
-            //cout<<inputs[i]<<endl;
-        }
-        inputs[s] = nullptr;
-        int result = execvp(inputs[0], inputs);
-        if(result == -1){
-            perror("Error in execution.");
-            exit(EXIT_FAILURE);
-        }
-    } 
-    else if(pid > 0){ 
-        // Parent process
-        cout<<"parent"<<endl;
-        if(background){
-            cout<<pid<<endl; //print pid
-        }
-        else{
-            foreground = pid;
-            int status;
-            waitpid(pid, &status, WUNTRACED); //wait for foreground process
-            foreground = -1;
-        }
-    } 
-    else{ 
-        // Fork error
-        cerr<<"Fork failed."<<endl;
-    }
-
-}
-
 void child(char* argv[], bool background, bool oredir, bool aredir, bool iredir, vector<string> &redir_argv) {
     int fd_out, fd_in;
     if(oredir || aredir){
-        //cout<<"inside oredir"<<endl;
         // Redirect output
         // Get file description
-        cout<<redir_argv[1]<<endl;
         fd_out = creat(redir_argv[1].c_str(), S_IRWXU);
         if(fd_out == -1){
             perror("Redirect output failed");
@@ -195,9 +85,7 @@ void child(char* argv[], bool background, bool oredir, bool aredir, bool iredir,
 
         
     else if(iredir){
-        //cout<<"inside iredir"<<endl;
         // Redirect input
-        cout<<redir_argv[1]<<endl;
         fd_in = open(redir_argv[1].c_str(), O_RDONLY);
         if(fd_in == -1){
             perror("Redirect input failed");
@@ -222,7 +110,7 @@ void child(char* argv[], bool background, bool oredir, bool aredir, bool iredir,
 
 void parent(pid_t child_pid, bool isbackground) {
    int status;
-   printf("Parent <%d> spawned a child <%d>.\n", getpid(), child_pid);
+   //printf("Parent <%d> spawned a child <%d>.\n", getpid(), child_pid);
 
       if(!isbackground){
          waitpid(child_pid, &status, 0);
@@ -231,7 +119,7 @@ void parent(pid_t child_pid, bool isbackground) {
       else{
          waitpid(child_pid, &status, WUNTRACED);
          if (WIFEXITED(status)) {   
-            printf("Child <%d> exited with status = %d.\n", child_pid, status);
+            //printf("Child <%d> exited with status = %d.\n", child_pid, status);
          }
       }
 }
@@ -241,84 +129,7 @@ void executePinfo(char * args[], int n){
     handlePinfo(args, n);
 }
 
-//handle redirection
-
-
-bool rawMode = false;
-
-// Function to enable raw terminal input (disable line buffering)
-void enableRawMode() {
-    struct termios term;
-    if (tcgetattr(STDIN_FILENO, &term) == -1) {
-        perror("tcgetattr");
-        exit(EXIT_FAILURE);
-    }
-    
-    term.c_lflag &= ~(ECHO | ICANON | ISIG);
-    term.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
-    term.c_cflag |= (CS8);
-    term.c_oflag &= ~(OPOST);
-    term.c_cc[VMIN] = 0;
-    term.c_cc[VTIME] = 1;
-
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &term) == -1) {
-        perror("tcsetattr");
-        exit(EXIT_FAILURE);
-    }
-
-    rawMode = true;
-}
-
-// Function to disable raw terminal input (restore original settings)
-void disableRawMode() {
-    if (!rawMode) {
-        return;
-    }
-
-    struct termios term;
-    if (tcgetattr(STDIN_FILENO, &term) == -1) {
-        perror("tcgetattr");
-        exit(EXIT_FAILURE);
-    }
-
-    term.c_lflag |= (ECHO | ICANON | ISIG);
-    
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &term) == -1) {
-        perror("tcsetattr");
-        exit(EXIT_FAILURE);
-    }
-
-    rawMode = false;
-}
-
-// Function to read a single character from the terminal
-char readChar() {
-    char c;
-    read(STDIN_FILENO, &c, 1);
-    return c;
-}
-
-// Function to handle up arrow key press
-void handleUpArrow(const std::vector<std::string>& history, std::string& input, size_t& historyIndex) {
-    if (!history.empty() && historyIndex < history.size()) {
-        if (historyIndex == 0) {
-            // Save the current input before navigating history
-            input = input;
-        }
-
-        // Display the next command from history
-        std::cout << "\033[2K\r"; // Clear the current line
-        std::cout << "> " << history[historyIndex];
-        input = history[historyIndex];
-        historyIndex++;
-
-        // Print the updated shell prompt
-        std::cout << "> " << input;
-    }
-}
-
 int main(){
-    //enableRawMode();
     string input;
     size_t hostname_size = 256;
     char hostname [hostname_size];
@@ -356,26 +167,11 @@ int main(){
         if(input.size() == 0) continue;
         addHistory(input);
 
-        //Handle up arrow key press
-        // char c = readChar();
-        // if (c == '\033') { // Escape sequence
-        //     char seq[3];
-        //     if (read(STDIN_FILENO, &seq[0], 1) == 1 &&
-        //         read(STDIN_FILENO, &seq[1], 1) == 1) {
-        //         if (seq[0] == '[' && seq[1] == 'A') {
-        //             handleUpArrow(history, input, currentHistoryIndex);
-        //             continue;
-        //         }
-        //     }
-        // }
-        // disableRawMode();
-
         //tokenize input line for multiple commands
         vector<string> commands;
         getCommands(&input[0], commands);
         int commands_size = commands.size();
         for(int i=0; i<commands_size; i++){
-            //vector<string> ip;
             char *argv[256];
             bool isBackground = false;
 
@@ -416,12 +212,6 @@ int main(){
             //Tokenize each command for tabs and spaces
             Tokenize(&commands[i][0], argv);
             if(argv[0] == NULL) break;
-            // int ip_size = ip.size();
-            // if(ip_size == 0) break;
-
-            // for(int i=0; i<ip.size(); i++){
-            //     cout<<ip[i]<<endl;
-            // }
     
             //exit
             if(strcmp(argv[0], "exit") == 0){
@@ -429,7 +219,7 @@ int main(){
                 return 0;
             }
 
-            //background check
+            //background command check
             int index = 0;
             while (argv[index] != NULL){
                 index++;
@@ -445,12 +235,6 @@ int main(){
                     }
                 }
             }
-            // string ip_last = ip[ip_size-1];
-            // if(strcmp(ip_last.c_str(),"&") == 0){
-            //     isBackground = true;
-            //     ip.pop_back();
-            //     ip_size--;
-            // }
 
             //pwd
             if(strcmp(argv[0], "pwd") == 0 && !oRedir && !iRedir && !aRedir){
@@ -507,7 +291,6 @@ int main(){
                         prev_dir = old;
                     }
                 }
-                //cout<<"prev dir: "<<prev_dir<<endl;
                 continue;
             }
 
@@ -546,7 +329,7 @@ int main(){
             }
             
             // pinfo command
-            if (argv[0] == "pinfo" && !oRedir && !iRedir && !aRedir) {
+            if (strcmp(argv[0],"pinfo")==0 && !oRedir && !iRedir && !aRedir) {
                 executePinfo(argv, ip_size);
                 continue;
             }
@@ -579,12 +362,12 @@ int main(){
                     }
                 }
             }
+
             else{
                 vector<string> redir_argv(2,"");
                 if(oRedir || iRedir || aRedir){
                     parse_redir(argv, ip_size, redir_argv);
                 }
-                //execCmd(ip, isBackground, oRedir, aRedir, iRedir, redir_argv);
                 pid_t pid = fork();
                 switch (pid) {
                     case -1:
@@ -602,6 +385,5 @@ int main(){
         }
     }
     saveHistory();
-    //disableRawMode();
     return 0;
 }

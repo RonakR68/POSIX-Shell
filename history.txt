@@ -1,0 +1,20 @@
+ls > new.txt
+exit
+ls
+cat < new.txt
+echo 12345 > new.txt
+cat < new.txt
+echo hellow>new.txt
+cat<new.txt
+exit
+cat < new.txt
+ls > new.txt
+cat < new.txt
+cat<new.txt
+cat<new.txt
+exit
+echo new text 1212 > new.txt
+cat < new.txt
+ls -l > new.txt
+cat < new.txt
+exit

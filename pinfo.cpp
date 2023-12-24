@@ -102,13 +102,13 @@ void printProcessInfo(pid_t pid){
 }
 
 // Function to handle pinfo command
-void handlePinfo(const vector<string>& args){
-    if(args.size() == 1){
+void handlePinfo(char* args[], int n){
+    if(n == 1){
         // If no PID is provided, print information for the shell process
         pid_t shellPid = getpid();
         printProcessInfo(shellPid);
     } 
-    else if(args.size() == 2){
+    else if(n == 2){
         // If PID is provided, print information for the specified process
         pid_t pid;
         try{
