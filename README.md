@@ -7,12 +7,12 @@
 2. Handling of random spaces and tabs in user input. Also multiple commands can be entered using ';' as a separator.
 3. Includes implementation of basic commands such as cd, pwd, echo, ls (with flags) from scratch using system calls.
 4. System commands: Foreground and Background processes. Any command ending with '&' is treated as a background command.
-5. custom pinfo command that display's process information using process id. 'pinfo': prints info of shell program. 'pinfo <pid>' prints info of process with pid.
+5. custom pinfo command that display's process information using process id. 'pinfo': prints info of shell program. 'pinfo pid' prints info of process with pid.
 6. Search functionality that searches for the file or directory under current directory recursively and returns true or false.
 7. I/O redirection: Input and output redirection using < and > respectively. Example: for output redirection: 'echo "hello" > output.txt' and for input redirection:'cat < example.txt'
 8. Pipe: Supports single pipe commands. Use '|' as linking character between two commands. No redirection operators supported.
 9. Simple signals such as CTRL-C (interrupt any currently running foreground process), CTRL-D (logout of shell) and CTRL-Z (pushes any currently running foreground process into the background, and change its state from running to stopped).
-10. History: 'history' command by default displays last 10 used commands. 'history <num>' commands displays only last num commands upto limit of 20. History is tracked for all sessions in a file.
+10. History: 'history' command by default displays last 10 used commands. 'history num' commands displays only last num commands upto limit of 20. History is tracked for all sessions in a file.
 
 ## Files Overview:
 - cd.cpp: contains code which implements cd functionality using chdir system call
