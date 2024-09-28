@@ -63,7 +63,7 @@ public:
     }
 
     void init_trie() {
-        const vector<string> directories = {"/bin", "/usr/bin", "/usr/local/bin", "/sbin"};
+        const vector<string> directories = {"/bin", "/usr/bin", "/usr/local/bin", "/sbin", "."};
 
         for (const string& dir : directories) {
             DIR *directory = opendir(dir.c_str());
@@ -72,6 +72,7 @@ public:
                 while ((entry = readdir(directory)) != NULL) {
                     if (entry->d_type == DT_REG || entry->d_type == DT_DIR) { // Regular file or directory
                         string name = entry->d_name;
+                        //cout<<"filename: "<<name<<endl;
                         if (!isContainsOtherThanCharacter(name.c_str())) {
                             insert(name); // Insert the command into the trie
                         }
@@ -84,7 +85,7 @@ public:
 
     bool isContainsOtherThanCharacter(const char *str) {
         for (int i = 0; str[i] != '\0'; i++) {
-            if (!isalpha(str[i])) // Check for non-alphabetic characters
+            if(!isalnum(str[i]) && str[i] != '.') // Check for non-alphabetic characters
                 return true;
         }
         return false;

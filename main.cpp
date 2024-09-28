@@ -46,40 +46,47 @@ string read_input(Trie &commandTrie)
             }
         }
         else if (ch == '\t')
-        { // Check for Tab key
+        { 
+            // Check for Tab key
             c[i] = '\0';
             string input(c);
             stringstream ss(input);
             string lastWord;
-            while (ss >> lastWord)
-                ;
+            while (ss >> lastWord);
             int lastWordLength = lastWord.length();
             suggestionsList = commandTrie.autocomplete(lastWord); // Get suggestions
-            if (!suggestionsList.empty())
-            {
+            if (!suggestionsList.empty()){
                 string firstSuggestion = suggestionsList[0];
-                // Clear the current input from the terminal
-                for (int j = 0; j < lastWordLength; j++)
-                {
-                    cout << "\b \b"; // Move back and erase each character
-                }
-                i -= lastWordLength; // Reset index
-                for (char ch : firstSuggestion)
-                {
-                    c[i++] = ch;
-                    cout << ch; // Print the suggestion inline
-                }
-                if (suggestionsList.size() > 1)
-                {
-                    cout << endl;
-                    for (size_t j = 1; j < suggestionsList.size(); j++)
+                // If there's only one suggestion, auto-complete
+                if (suggestionsList.size() == 1){
+                    // Clear the current last word from the terminal
+                    for (int j = 0; j < lastWordLength; j++)
                     {
-                        cout << suggestionsList[j] << endl;
+                        cout << "\b \b"; // Move back and erase each character
                     }
-                    // cout << "\033[" << suggestionsList.size() - 1 << "A";
+                    i -= lastWordLength; // Reset index for the last word
+
+                    // Insert the auto-completed suggestion
+                    for (char ch : firstSuggestion)
+                    {
+                        c[i++] = ch;
+                        cout << ch; // Print the suggestion inline
+                    }
+                }
+                else
+                {
+                    // If there are multiple suggestions, show all of them
+                    cout << endl;
+                    for (size_t j = 0; j < suggestionsList.size(); j++)
+                    {
+                        cout << suggestionsList[j] << " ";
+                    }
+                    cout << endl;
+
+                    // After displaying suggestions, restore the input
                     for (int j = 0; j < i; j++)
                     {
-                        std::cout << c[j]; // Reprint characters from the buffer
+                        cout << c[j]; // Reprint characters from the buffer (keeping input intact)
                     }
                 }
             }
