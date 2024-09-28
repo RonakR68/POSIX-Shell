@@ -2,6 +2,7 @@
 #include "trie.h"
 using namespace std;
 
+
 // Function to enable raw mode
 void enableRawMode(struct termios &orig_termios)
 {
@@ -18,7 +19,14 @@ void disableRawMode(struct termios &orig_termios)
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios); // Restore original settings
 }
 
-string read_input(Trie &commandTrie, vector<string> &history, size_t &currentHistoryIndex)
+// display shell prompt
+void displayShell(string user, string host, string dir)
+{
+    cout << user << "@" << host << ":" << dir << ">";
+}
+
+
+string read_input(Trie &commandTrie, vector<string> &history, size_t &currentHistoryIndex, string user, string hostname, string curr_path)
 {
     char c[100000]; // Buffer for input
     int i = 0;      // Index for buffer
@@ -84,7 +92,7 @@ string read_input(Trie &commandTrie, vector<string> &history, size_t &currentHis
                         cout << suggestionsList[j] << " ";
                     }
                     cout << endl;
-
+                    displayShell(user, string(hostname), curr_path);
                     // After displaying suggestions, restore the input
                     for (int j = 0; j < i; j++)
                     {
@@ -101,6 +109,7 @@ string read_input(Trie &commandTrie, vector<string> &history, size_t &currentHis
                         currentHistoryIndex--;
                         string command = history[currentHistoryIndex];
                         cout << "\r\033[K"; // Clear current line
+                        displayShell(user, string(hostname), curr_path);
                         cout << command;    // Show command from history
                         strcpy(c, command.c_str()); // Update buffer
                         i = command.length(); // Update index
@@ -112,6 +121,7 @@ string read_input(Trie &commandTrie, vector<string> &history, size_t &currentHis
                         currentHistoryIndex++;
                         string command = history[currentHistoryIndex];
                         cout << "\r\033[K"; // Clear current line
+                        displayShell(user, string(hostname), curr_path);
                         cout << command;    // Show command from history
                         strcpy(c, command.c_str()); // Update buffer
                         i = command.length(); // Update index
@@ -120,6 +130,7 @@ string read_input(Trie &commandTrie, vector<string> &history, size_t &currentHis
                         // If at the end of the history, clear the line
                         currentHistoryIndex++;
                         cout << "\r\033[K"; // Clear current line
+                        displayShell(user, string(hostname), curr_path);
                         i = 0; // Reset index
                         c[0] = '\0'; // Clear buffer
                     }
@@ -135,12 +146,6 @@ string read_input(Trie &commandTrie, vector<string> &history, size_t &currentHis
     c[i] = '\0'; // Null terminate the string
     disableRawMode(orig_termios);
     return string(c); // Return input as a string
-}
-
-// display shell prompt
-void displayShell(string user, string host, string dir)
-{
-    cout << user << "@" << host << ":" << dir << ">";
 }
 
 // get multiple commands if any from single line
@@ -424,7 +429,7 @@ int main()
         //      break;
         //  }
 
-        input = read_input(commandTrie, history, currentHistoryIndex);
+        input = read_input(commandTrie, history, currentHistoryIndex, user, string(hostname), curr_path);
         if (input.size() == 0)
             continue;
         currentHistoryIndex = history.size(); 
