@@ -1,6 +1,6 @@
 # My Shell
 
-- A user defined interactive POSIX based shell program using cpp which supports a semi-colon separated list of commands.
+- A user defined interactive POSIX based shell program using cpp with a subset of feature support of default shell.
 
 ## Features
 1. Display: On running the shell program, the prompt of the form '_username_@_system_name_:_current_directory_>' is displayed. The directory from where shell is invoked is considered as home directory and indicated by ~
@@ -12,8 +12,7 @@
 7. I/O redirection: Input and output redirection using < and > respectively. Example: for output redirection: 'echo "hello" > output.txt' and for input redirection:'cat < example.txt'
 8. Pipe: Supports single pipe commands. Use '|' as linking character between two commands. No redirection operators supported.
 9. Auto-Suggest and Completion: Uses a Trie data structure to provide auto-suggestions for commands as the user types. When a user presses the Tab key, the shell suggests possible completions based on the input.
-10. Simple signals such as CTRL-C (interrupt any currently running foreground process), CTRL-D (logout of shell) and CTRL-Z (pushes any currently running foreground process into the background, and change its state from running to stopped).
-11. History: 'history' command by default displays last 10 used commands. 'history num' commands displays only last num commands upto limit of 20. The up and down arrow keys allow users to navigate through their command history.
+10. History: 'history' command by default displays last 10 used commands. 'history num' commands displays only last num commands upto limit of 20. The up and down arrow keys allow users to navigate through their command history.
 
 ## Files Overview:
 - cd.cpp: contains code which implements cd functionality using chdir system call
