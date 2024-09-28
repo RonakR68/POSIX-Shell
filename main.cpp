@@ -18,17 +18,19 @@ void disableRawMode(struct termios &orig_termios)
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios); // Restore original settings
 }
 
-string read_input(Trie &commandTrie)
+string read_input(Trie &commandTrie, vector<string> &history, size_t &currentHistoryIndex)
 {
     char c[100000]; // Buffer for input
     int i = 0;      // Index for buffer
     vector<string> suggestionsList;
     struct termios orig_termios;
     enableRawMode(orig_termios);
+    
 
     while (true)
     {
         char ch = getchar(); // Read a character from input
+        
         if (ch == '\n')
         { // Check for Enter key
             if (i > 0)
@@ -89,6 +91,39 @@ string read_input(Trie &commandTrie)
                         cout << c[j]; // Reprint characters from the buffer (keeping input intact)
                     }
                 }
+            }
+        }
+        else if (ch == 0x1B) { // Check for Escape sequence (arrow keys)
+            getchar(); // skip the [
+            switch (getchar()) {
+                case 'A': // Up arrow
+                    if (!history.empty() && currentHistoryIndex > 0) {
+                        currentHistoryIndex--;
+                        string command = history[currentHistoryIndex];
+                        cout << "\r\033[K"; // Clear current line
+                        cout << command;    // Show command from history
+                        strcpy(c, command.c_str()); // Update buffer
+                        i = command.length(); // Update index
+                        cout.flush(); // Flush output to show the command
+                    }
+                    break;
+                case 'B': // Down arrow
+                    if (!history.empty() && currentHistoryIndex < history.size() - 1) {
+                        currentHistoryIndex++;
+                        string command = history[currentHistoryIndex];
+                        cout << "\r\033[K"; // Clear current line
+                        cout << command;    // Show command from history
+                        strcpy(c, command.c_str()); // Update buffer
+                        i = command.length(); // Update index
+                        cout.flush(); // Flush output to show the command
+                    } else if (currentHistoryIndex == history.size() - 1) {
+                        // If at the end of the history, clear the line
+                        currentHistoryIndex++;
+                        cout << "\r\033[K"; // Clear current line
+                        i = 0; // Reset index
+                        c[0] = '\0'; // Clear buffer
+                    }
+                    break;
             }
         }
         else
@@ -361,7 +396,7 @@ int main()
     signal(SIGTSTP, signalCtrlZ);
     signal(SIGINT, signalCtrlC);
     loadHistory();
-    size_t currentHistoryIndex = history.size() - 1;
+    size_t currentHistoryIndex = history.size();
 
     Trie commandTrie;
     vector<string> commands = {"cd", "ls", "pwd", "echo", "exit", "pinfo", "search", "history"};
@@ -389,9 +424,10 @@ int main()
         //      break;
         //  }
 
-        input = read_input(commandTrie);
+        input = read_input(commandTrie, history, currentHistoryIndex);
         if (input.size() == 0)
             continue;
+        currentHistoryIndex = history.size(); 
         addHistory(input);
 
         // tokenize input line for multiple commands

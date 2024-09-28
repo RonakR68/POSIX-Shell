@@ -13,7 +13,7 @@
 8. Pipe: Supports single pipe commands. Use '|' as linking character between two commands. No redirection operators supported.
 9. Auto-Suggest and Completion: Uses a Trie data structure to provide auto-suggestions for commands as the user types. When a user presses the Tab key, the shell suggests possible completions based on the input.
 10. Simple signals such as CTRL-C (interrupt any currently running foreground process), CTRL-D (logout of shell) and CTRL-Z (pushes any currently running foreground process into the background, and change its state from running to stopped).
-11. History: 'history' command by default displays last 10 used commands. 'history num' commands displays only last num commands upto limit of 20. History is tracked for all sessions in a file.
+11. History: 'history' command by default displays last 10 used commands. 'history num' commands displays only last num commands upto limit of 20. The up and down arrow keys allow users to navigate through their command history.
 
 ## Files Overview:
 - cd.cpp: contains code which implements cd functionality using chdir system call

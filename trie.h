@@ -29,6 +29,18 @@ public:
         init_trie(); // Initialize with commands from directories
     }
 
+    void clearTrie(TrieNode* node) {
+        for (auto& child : node->children) {
+            clearTrie(child.second); // Recursively delete children
+        }
+        delete node; // Delete the current node
+    }
+
+    void resetTrie() {
+        clearTrie(root); // Clear the current Trie
+        root = new TrieNode(); // Re-initialize the root node
+    }
+
     void insert(const string& word) {
         TrieNode* node = root;
         for (char ch : word) {
@@ -50,6 +62,8 @@ public:
     }
 
     vector<string> autocomplete(const string& prefix) {
+        resetTrie();
+        init_trie();
         vector<string> suggestions;
         TrieNode* node = root;
         for (char ch : prefix) {
